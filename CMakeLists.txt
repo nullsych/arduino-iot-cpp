@@ -1,17 +1,78 @@
 cmake_minimum_required(VERSION 3.16)
-project(home_assist_client)
+project(arduino_cloud_client)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(CURL REQUIRED)
+# ---- Find packages ----
+find_package(OpenSSL REQUIRED)
+find_package(Threads REQUIRED)
+find_package(PahoMqttCpp CONFIG REQUIRED)
 
-file(GLOB SRC_FILES src/*.cpp)
+find_path(CBOR_INCLUDE_DIR cbor.h
+  PATHS
+    "$ENV{SYSROOT}/usr/include"
+    "$ENV{SYSROOT}/usr/local/include"
+  NO_DEFAULT_PATH
+)
 
-add_executable(home_assist_client ${SRC_FILES})
+find_library(CBOR_LIBRARY cbor
+  PATHS
+    "$ENV{SYSROOT}/usr/lib/arm-linux-gnueabihf"
+    "$ENV{SYSROOT}/usr/local/lib"
+    "$ENV{SYSROOT}/usr/lib"
+  NO_DEFAULT_PATH
+)
 
-include_directories(${CMAKE_SYSROOT}/usr/include/arm-linux-gnueabihf)
-link_directories(${CMAKE_SYSROOT}/usr/lib/arm-linux-gnueabihf)
+if(NOT CBOR_INCLUDE_DIR OR NOT CBOR_LIBRARY)
+  message(FATAL_ERROR "libcbor not found in sysroot")
+endif()
 
-# target_link_libraries(home_assist_client CURL::libcurl)
-target_link_libraries(home_assist_client curl ssl crypto z)
+file(GLOB_RECURSE MAIN_SOURCES src/*.cpp)
+file(GLOB_RECURSE CBOR_PACKER_SOURCES src/SenMLCborPacker/*.cpp)
+file(GLOB_RECURSE APPLICATION_SOURCES src/Application/*.cpp)
+
+add_executable(arduino_cloud_client
+  ${MAIN_SOURCES}
+  ${CBOR_PACKER_SOURCES}
+  ${APPLICATION_SOURCES}
+)
+
+# Try to get git commit hash (short)
+execute_process(
+  COMMAND git rev-parse --short HEAD
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE APPL_VERSION
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  ERROR_QUIET
+)
+
+if(APPL_VERSION STREQUAL "")
+  set(APPL_VERSION "dev")
+endif()
+
+target_include_directories(arduino_cloud_client
+  PRIVATE
+  src/
+  src/Application
+  src/common
+  src/SenMLCborPacker/
+  ${CBOR_INCLUDE_DIR}
+)
+
+target_link_directories(arduino_cloud_client PRIVATE
+    ${CBOR_LIBRARY_DIRS}
+)
+
+target_link_libraries(arduino_cloud_client PRIVATE
+    PahoMqttCpp::paho-mqttpp3
+    ${CBOR_LIBRARY}
+    OpenSSL::SSL
+    OpenSSL::Crypto
+    Threads::Threads
+)
+
+target_compile_definitions(arduino_cloud_client
+	PRIVATE
+	APPL_VERSION="${GIT_COMMIT_HASH}"
+)
