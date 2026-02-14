@@ -1,28 +1,57 @@
+#include <boost/filesystem.hpp>
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <csignal>
 #include <iostream>
 #include <string>
 
 #include "Application.hpp"
+#include "common/logs.h"
 
-#define DEVICE_ID "e788959f-1cd6-4c9f-a474-64ffcff6d966"
-#define SECRET_KEY "!RH7GzTmC5mSwMIMA1XH?J@RD"
-#define THING_ID "338c584c-a406-4de3-9671-23a798515ce8"
+Application *app_ptr = nullptr;
+
+void signal_handler(int sig)
+{
+    if (sig == SIGINT || sig == SIGTERM)
+    {
+        if (app_ptr)
+            app_ptr->stop();
+    }
+}
 
 int main()
 {
 #ifdef BUILD_DAEMON
-    logger::init_syslog("mydaemon");
+    logger::init_syslog("arduino_iot_cloud_client");
 #endif
-
-    // LOG_INFO("Service started");
-    // LOG_ERROR("Error code " << 42);
 
 #ifdef BUILD_DAEMON
     logger::close_syslog();
 #endif
 
-    Application server_app(DEVICE_ID, SECRET_KEY);
-    server_app.addThing(THING_ID);
-    server_app.start();
+    boost::property_tree::ptree pt;
+    boost::property_tree::read_json("credentials.json", pt);
+
+    if (!boost::filesystem::exists("credentials.json"))
+    {
+        LOG_ERROR("File credentials.json not found! Create one and run again.");
+        return -1;
+    }
+
+    std::string device_id  = pt.get<std::string>("device_id");
+    std::string secret_key = pt.get<std::string>("secret_key");
+    std::string thing_id   = pt.get<std::string>("thing_id");
+
+    Application app(device_id, secret_key);
+    app_ptr = &app;
+
+    std::signal(SIGINT, signal_handler);
+    std::signal(SIGTERM, signal_handler);
+
+    app.addThing(thing_id);
+    app.setPeriod(60 * 1);  // 1 minute
+
+    app.start();
 
     return 0;
 }

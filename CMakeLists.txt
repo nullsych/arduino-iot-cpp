@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(arduino_cloud_client)
+project(arduino_iot_cloud_client)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -32,7 +32,7 @@ file(GLOB_RECURSE MAIN_SOURCES src/*.cpp)
 file(GLOB_RECURSE CBOR_PACKER_SOURCES src/SenMLCborPacker/*.cpp)
 file(GLOB_RECURSE APPLICATION_SOURCES src/Application/*.cpp)
 
-add_executable(arduino_cloud_client
+add_executable(arduino_iot_cloud_client
   ${MAIN_SOURCES}
   ${CBOR_PACKER_SOURCES}
   ${APPLICATION_SOURCES}
@@ -51,7 +51,7 @@ if(APPL_VERSION STREQUAL "")
   set(APPL_VERSION "dev")
 endif()
 
-target_include_directories(arduino_cloud_client
+target_include_directories(arduino_iot_cloud_client
   PRIVATE
   src/
   src/Application
@@ -60,19 +60,21 @@ target_include_directories(arduino_cloud_client
   ${CBOR_INCLUDE_DIR}
 )
 
-target_link_directories(arduino_cloud_client PRIVATE
+target_link_directories(arduino_iot_cloud_client PRIVATE
     ${CBOR_LIBRARY_DIRS}
 )
 
-target_link_libraries(arduino_cloud_client PRIVATE
+target_link_libraries(arduino_iot_cloud_client PRIVATE
     PahoMqttCpp::paho-mqttpp3
     ${CBOR_LIBRARY}
     OpenSSL::SSL
     OpenSSL::Crypto
     Threads::Threads
+    -lboost_filesystem
+    -lboost_system
 )
 
-target_compile_definitions(arduino_cloud_client
+target_compile_definitions(arduino_iot_cloud_client
 	PRIVATE
-	APPL_VERSION="${GIT_COMMIT_HASH}"
+	APPL_VERSION="${APPL_VERSION}"
 )

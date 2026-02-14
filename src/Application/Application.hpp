@@ -2,6 +2,7 @@
 
 #include <mqtt/async_client.h>
 
+#include <atomic>
 #include <memory>
 #include <string>
 #include <vector>
@@ -16,7 +17,9 @@ public:
 
 public:
     void start();
-    void addThing(const std::string &thing_id);
+    void stop();
+    void addThing(const std::string &);
+    void setPeriod(int);
 
 private:
     void broadcast();
@@ -25,11 +28,13 @@ private:
     std::string m_device_id     = "";
     std::string m_device_secret = "";
 
-private:
+private: /* network resources */
+    std::atomic<bool> m_running{true};
     std::unique_ptr<mqtt::async_client> m_client;
     std::unique_ptr<mqtt::ssl_options> m_sslopts;
     std::unique_ptr<mqtt::connect_options> m_connopts;
     std::vector<std::string> m_topics_out;
+    int m_pub_interval = 60; /* seconds */
 
 private: /* url members */
     const int m_port1 = 8884;
