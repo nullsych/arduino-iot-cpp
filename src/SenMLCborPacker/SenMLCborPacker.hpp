@@ -14,6 +14,8 @@ public:
     static std::vector<uint8_t> make(const std::string &name, bool value);
     static std::vector<uint8_t> make(const std::string &name, const std::string &value);
     static std::vector<uint8_t> make(const std::string &name, const char *value);
+    static std::vector<uint8_t> make_multiple(
+        const std::vector<std::pair<std::string, double>> &items);
 
 private:
     static cbor_item_t *new_map_with_name_(const std::string &name, size_t pairs);

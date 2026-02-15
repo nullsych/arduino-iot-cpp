@@ -8,6 +8,7 @@
 #include <memory>
 
 #include "SenMLCborPacker/SenMLCborPacker.hpp"
+#include "StationData/StationData.hpp"
 #include "common/logs.h"
 
 #ifndef APPL_VERSION
@@ -58,39 +59,80 @@ void Application::setPeriod(int p)
 
 void Application::broadcast()
 {
-    double cpu_temp = getCpuTemp();
-    LOG_INFO("Read RPi CPU temperature: " << cpu_temp << " C");
+    double cpu_temp  = -1;
+    double home_temp = -1;
+    double home_hum  = -1;
 
-    auto payload = SenMLCborPacker::make("cpu_temperature", cpu_temp);
+    if (!m_station->isAlive())
+    {
+        LOG_ERROR("Station watchdog timeout!");
+    }
+    else
+    {
+        home_temp = m_station->getTemperature();
+        home_hum  = m_station->getHumidity();
+    }
 
-#if 0
-            auto payload = make_senml_pack_double({
-            {"cpu_temperature", cpu_temp},
-            {"home_temperature", home_temp},
-            {"home_humidity", home_hum}
-            });
-#endif
+    cpu_temp = getCpuTemp();
 
+    LOG_INFO("CPU temperature " << cpu_temp << " C, Home temperature: " << home_temp
+                                << " C, Home humidity = " << home_hum << " %");
+
+    // auto payload = SenMLCborPacker::make("cpu_temperature", cpu_temp);
+    auto payload = SenMLCborPacker::make_multiple({{"cpu_temperature", cpu_temp},
+                                                   {"home_temperature", home_temp},
+                                                   {"home_humidity", home_hum}});
     for (const auto &topic : m_topics_out)
     {
         auto msg = mqtt::make_message(topic, payload.data(), payload.size());
         msg->set_qos(1);
         msg->set_retained(false);
 
-        m_client->publish(msg)->wait();
-        LOG_INFO("Published " << payload.size() << " bytes");
+        try
+        {
+            m_client->publish(msg)->wait();
+            m_sent_count++;
+        }
+        catch (const mqtt::exception &e)
+        {
+            m_failed_count++;
+            LOG_ERROR("Failed to publish data: " << e.what());
+        }
+
+        uint64_t sent   = m_sent_count.load();
+        uint64_t failed = m_failed_count.load();
+        LOG_INFO("Published " << sent << " packet(s) / Failed " << failed << " packet(s)");
     }
 }
 
 void Application::stop()
 {
     m_running = false;
+    m_cv.notify_all();
 
-    if (m_client && m_client->is_connected())
-        m_client->disconnect()->wait();
+    try
+    {
+        if (m_client && m_client->is_connected())
+            m_client->disconnect()->wait();
+    }
+    catch (...)
+    {
+    }
+
+    LOG_INFO("Exiting application...");
 }
 
-void Application::start()
+void Application::initStation()
+{
+    m_station = std::make_unique<StationData>("/dev/ttyUSB0");
+
+    if (!m_station->start())
+    {
+        LOG_ERROR("No serial devices found");
+    }
+}
+
+void Application::initClient()
 {
     m_sslopts  = std::make_unique<mqtt::ssl_options>();
     m_connopts = std::make_unique<mqtt::connect_options>();
@@ -103,26 +145,38 @@ void Application::start()
 
     m_url    = m_url + std::to_string(m_port1);
     m_client = std::make_unique<mqtt::async_client>(m_url, m_device_id);
+}
 
-    LOG_INFO("Starting client at: " << m_url);
+void Application::start()
+{
+    initStation();
+
+    initClient();
+
+    LOG_INFO("Starting MQTT client at: " << m_url);
 
     try
     {
         m_client->connect(*m_connopts)->wait();
         LOG_INFO("MQTT connected");
 
+        std::unique_lock<std::mutex> lock(m_mutex);
+
         while (m_running)
         {
-            LOG_INFO("Broadcast data...");
+            lock.unlock();
+
             broadcast();
 
-            std::this_thread::sleep_for(std::chrono::seconds(m_pub_interval));
+            lock.lock();
+            m_cv.wait_for(lock, std::chrono::seconds(m_pub_interval),
+                          [this] { return !m_running.load(); });
         }
 
         m_client->disconnect()->wait();
     }
     catch (const mqtt::exception &e)
     {
-        LOG_INFO("MQTT connecting error: " << e.what());
+        LOG_ERROR("MQTT connecting error: " << e.what());
     }
 }

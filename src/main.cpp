@@ -49,7 +49,7 @@ int main()
     std::signal(SIGTERM, signal_handler);
 
     app.addThing(thing_id);
-    app.setPeriod(60 * 1);  // 1 minute
+    app.setPeriod(30 * 1);  // 1 minute
 
     app.start();
 

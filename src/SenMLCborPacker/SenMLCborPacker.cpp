@@ -70,6 +70,48 @@ std::vector<uint8_t> SenMLCborPacker::make(const std::string &name, const std::s
 }
 
 /**
+ * @brief Pack multiple SenML records with double values into a single CBOR array.
+ *
+ * Each entry is packed as [{ 0: <name>, 2: <value> }, ...].
+ *
+ * Example usage:
+ * auto payload = SenMLCborPacker::make_multiple({
+ *     {"home_luminosity", home_lum},
+ *     {"home_temperature", home_temp},
+ *     {"home_humidity", home_hum}
+ * });
+ */
+std::vector<uint8_t> SenMLCborPacker::make_multiple(
+    const std::vector<std::pair<std::string, double>> &items)
+{
+    cbor_item_t *arr = cbor_new_definite_array(items.size());
+
+    for (const auto &[name, value] : items)
+    {
+        cbor_item_t *map = new_map_with_name_(name, 2);
+
+        cbor_map_add(map, (cbor_pair){
+                              .key   = cbor_build_uint8(2),
+                              .value = cbor_build_float8(value),
+                          });
+
+        cbor_array_push(arr, map);
+        cbor_decref(&map);
+    }
+
+    unsigned char *buffer = nullptr;
+    size_t buffer_size    = 0;
+    size_t len            = cbor_serialize_alloc(arr, &buffer, &buffer_size);
+
+    std::vector<uint8_t> out(buffer, buffer + len);
+
+    free(buffer);
+    cbor_decref(&arr);
+
+    return out;
+}
+
+/**
  * @brief Pack a single SenML record with a C-string value (vs).
  *
  * Convenience overload that forwards to the std::string version.

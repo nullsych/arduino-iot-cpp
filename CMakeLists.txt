@@ -30,12 +30,14 @@ endif()
 
 file(GLOB_RECURSE MAIN_SOURCES src/*.cpp)
 file(GLOB_RECURSE CBOR_PACKER_SOURCES src/SenMLCborPacker/*.cpp)
+file(GLOB_RECURSE STATION_DATA_SOURCES src/Application/*.cpp)
 file(GLOB_RECURSE APPLICATION_SOURCES src/Application/*.cpp)
 
 add_executable(arduino_iot_cloud_client
   ${MAIN_SOURCES}
   ${CBOR_PACKER_SOURCES}
   ${APPLICATION_SOURCES}
+  ${STATION_DATA_SOURCES}
 )
 
 # Try to get git commit hash (short)
@@ -57,6 +59,7 @@ target_include_directories(arduino_iot_cloud_client
   src/Application
   src/common
   src/SenMLCborPacker/
+  src/StationData/
   ${CBOR_INCLUDE_DIR}
 )
 
