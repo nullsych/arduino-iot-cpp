@@ -27,6 +27,7 @@ private:
     void broadcast();
     void initStation();
     void initClient();
+    void stopClient();
 
 private:
     std::string m_device_id     = "";
@@ -44,7 +45,8 @@ private: /* network resources */
     std::vector<std::string> m_topics_out;
     std::atomic<uint64_t> m_sent_count{0};
     std::atomic<uint64_t> m_failed_count{0};
-    int m_pub_interval = 60; /* seconds */
+    int m_pub_interval        = 60; /* seconds */
+    const int m_reconnect_max = 3;
 
 private: /* url members */
     const int m_port1 = 8884;

@@ -97,5 +97,138 @@ docker commit 4eab2bb77eb5 rpi-cross:trixie-ready
 
 And run later as:
 ```sh
-docker run -it rpi-cross:trixie-ready
+docker run -it -v $HOME:/rpi-env -w /rpi-env rpi-cross:trixie-ready
 ```
+
+
+## See logs
+
+Via `journalctl`:
+
+```sh
+sudo journalctl -f | grep "arduino"
+Feb 16 18:47:02 raspberrypi arduino_iot_cloud_client[1000]: CPU temperature 57.996 C, Home temperature: 26.06 C, Home humidity = 25.3 %
+Feb 16 18:47:02 raspberrypi arduino_iot_cloud_client[1000]: Published 7 packet(s) / Failed 0 packet(s)
+```
+
+
+Хрюша Соплюша 🐷, самый правильный способ автозапуска демона на Linux (и на твоей малине) — через **systemd service**.
+Это стандарт и самый надёжный вариант.
+
+---
+
+# 🚀 1. Создаём systemd unit
+
+Создай файл:
+
+```bash
+sudo nano /etc/systemd/system/arduino-iot.service
+```
+
+Вставь 👇
+
+```ini
+[Unit]
+Description=Arduino IoT Cloud Client
+After=network-online.target
+Wants=network-online.target
+Restart=always
+RestartSec=5
+StartLimitInterval=0
+
+
+[Service]
+Type=simple
+ExecStart=/home/asist/arduino_iot_cloud_client
+WorkingDirectory=/usr/local/bin
+Restart=always
+RestartSec=5
+User=asist
+Environment=HOME=/home/asist
+
+# ttyUSB access group
+Group=dialout
+
+[Install]
+WantedBy=multi-user.target
+```
+
+
+The `credentials.json` should be in:
+
+```
+/usr/local/bin/credentials.json
+```
+
+---
+
+# 🔧 2. Перезагрузить systemd
+
+```bash
+sudo systemctl daemon-reload
+```
+
+
+Start (manual):
+
+```bash
+sudo systemctl start arduino-iot
+```
+
+Check:
+
+```bash
+sudo systemctl status arduino-iot
+
+● arduino-iot.service - Arduino IoT Cloud Client
+     Loaded: loaded (/etc/systemd/system/arduino-iot.service; disabled; preset: enabled)
+     Active: activating (auto-restart) since Mon 2026-02-16 18:55:38 GMT; 159ms ago
+ Invocation: 6502f1824b6d41e881a57f820ef72243
+    Process: 1175 ExecStart=/home/asist/arduino_iot_cloud_client (code=exited, status=0/SUCCESS)
+   Main PID: 1175 (code=exited, status=0/SUCCESS)
+        CPU: 231ms
+```
+
+Enable autostart:
+
+```bash
+sudo systemctl enable arduino-iot
+```
+
+See logs:
+
+```bash
+journalctl -u arduino-iot -f
+```
+
+Stop:
+
+```bash
+sudo systemctl stop arduino-iot
+```
+
+Disable autostart:
+
+```bash
+sudo systemctl disable arduino-iot
+```
+
+
+For Arduino `/dev/ttyUSB0`:
+
+```ini
+Group=dialout
+```
+
+And add user:
+
+```bash
+sudo usermod -aG dialout asist
+```
+
+
+
+sudo systemctl start arduino-iot
+
+
+sudo systemctl status arduino-iot

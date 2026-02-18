@@ -4,7 +4,7 @@
 #include <string>
 
 #ifdef BUILD_DAEMON
-#include <syslog.h>
+#include <sys/syslog.h>
 #else
 #include <ctime>
 #include <iostream>
@@ -62,33 +62,51 @@ inline void log_sys(int priority, const std::string &msg)
 
 #ifdef BUILD_DAEMON
 
-#define LOG_STREAM(prio, msg)             \
-    do                                    \
-    {                                     \
-        std::ostringstream oss;           \
-        oss << msg;                       \
-        logger::log_sys(prio, oss.str()); \
+#define LOG_INF(msg)                          \
+    do                                        \
+    {                                         \
+        std::ostringstream oss;               \
+        oss << msg;                           \
+        logger::log_sys(LOG_INFO, oss.str()); \
     } while (0)
-
-#define LOG_INFO(msg) LOG_STREAM(LOG_INFO, msg)
-#define LOG_WARN(msg) LOG_STREAM(LOG_WARNING, msg)
-#define LOG_ERROR(msg) LOG_STREAM(LOG_ERR, msg)
-#define LOG_DEBUG(msg) LOG_STREAM(LOG_DEBUG, msg)
+#define LOG_WARN(msg)                            \
+    do                                           \
+    {                                            \
+        std::ostringstream oss;                  \
+        oss << msg;                              \
+        logger::log_sys(LOG_WARNING, oss.str()); \
+    } while (0)
+#define LOG_ERROR(msg)                       \
+    do                                       \
+    {                                        \
+        std::ostringstream oss;              \
+        oss << msg;                          \
+        logger::log_sys(LOG_ERR, oss.str()); \
+    } while (0)
 
 #else
 
-#define LOG_STREAM(level, color, msg)                 \
-    do                                                \
-    {                                                 \
-        std::ostringstream oss;                       \
-        oss << msg;                                   \
-        logger::log_console(level, color, oss.str()); \
+#define LOG_INF(msg)                                           \
+    do                                                         \
+    {                                                          \
+        std::ostringstream oss;                                \
+        oss << msg;                                            \
+        logger::log_console("INFO", logger::GREEN, oss.str()); \
     } while (0)
-
-#define LOG_INFO(msg) LOG_STREAM("INFO", logger::GREEN, msg)
-#define LOG_WARN(msg) LOG_STREAM("WARN", logger::YELLOW, msg)
-#define LOG_ERROR(msg) LOG_STREAM("ERRO", logger::RED, msg)
-#define LOG_DEBUG(msg) LOG_STREAM("DBG", logger::CYAN, msg)
+#define LOG_WARN(msg)                                           \
+    do                                                          \
+    {                                                           \
+        std::ostringstream oss;                                 \
+        oss << msg;                                             \
+        logger::log_console("WARN", logger::YELLOW, oss.str()); \
+    } while (0)
+#define LOG_ERROR(msg)                                       \
+    do                                                       \
+    {                                                        \
+        std::ostringstream oss;                              \
+        oss << msg;                                          \
+        logger::log_console("ERRO", logger::RED, oss.str()); \
+    } while (0)
 
 #endif
 

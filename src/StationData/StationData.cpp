@@ -68,7 +68,7 @@ bool StationData::start()
 
     m_port  = detected;
     m_alive = true;
-    LOG_INFO("Port found: " << m_port);
+    LOG_INF("Port found: " << m_port);
 
     m_running = true;
     m_thread  = std::thread(&StationData::readerLoop, this);

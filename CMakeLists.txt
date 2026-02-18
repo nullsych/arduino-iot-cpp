@@ -4,6 +4,12 @@ project(arduino_iot_cloud_client)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+option(BUILD_DAEMON "Build as daemon" OFF)
+
+if(BUILD_DAEMON)
+    add_definitions(-DBUILD_DAEMON)
+endif()
+
 # ---- Find packages ----
 find_package(OpenSSL REQUIRED)
 find_package(Threads REQUIRED)

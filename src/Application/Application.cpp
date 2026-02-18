@@ -30,7 +30,7 @@ Application::Application(const std::string &device_id, const std::string &device
     : m_device_id(device_id), m_device_secret(device_secret)
 {
     std::cout << std::endl;
-    LOG_INFO("Git version: " << APPL_VERSION);
+    LOG_INF("Git version: " << APPL_VERSION);
 }
 
 Application::~Application() {}
@@ -49,11 +49,12 @@ void Application::setPeriod(int p)
 {
     if (p < 30 || p <= 0)
     {
-        LOG_INFO("Period " << p << " is too small! Recommend to set at least 30 seconds!");
+        LOG_INF("Period " << p << " is too small! Recommend to set at least 30 seconds!");
     }
     else
     {
         m_pub_interval = p;
+        LOG_INF("Set publish period: " << m_pub_interval << " sec");
     }
 }
 
@@ -75,10 +76,9 @@ void Application::broadcast()
 
     cpu_temp = getCpuTemp();
 
-    LOG_INFO("CPU temperature " << cpu_temp << " C, Home temperature: " << home_temp
-                                << " C, Home humidity = " << home_hum << " %");
+    LOG_INF("CPU temperature " << cpu_temp << " C, Home temperature: " << home_temp
+                               << " C, Home humidity = " << home_hum << " %");
 
-    // auto payload = SenMLCborPacker::make("cpu_temperature", cpu_temp);
     auto payload = SenMLCborPacker::make_multiple({{"cpu_temperature", cpu_temp},
                                                    {"home_temperature", home_temp},
                                                    {"home_humidity", home_hum}});
@@ -101,15 +101,12 @@ void Application::broadcast()
 
         uint64_t sent   = m_sent_count.load();
         uint64_t failed = m_failed_count.load();
-        LOG_INFO("Published " << sent << " packet(s) / Failed " << failed << " packet(s)");
+        LOG_INF("Published " << sent << " packet(s) / Failed " << failed << " packet(s)");
     }
 }
 
-void Application::stop()
+void Application::stopClient()
 {
-    m_running = false;
-    m_cv.notify_all();
-
     try
     {
         if (m_client && m_client->is_connected())
@@ -118,8 +115,15 @@ void Application::stop()
     catch (...)
     {
     }
+}
 
-    LOG_INFO("Exiting application...");
+void Application::stop()
+{
+    m_running = false;
+    m_cv.notify_all();
+
+    stopClient();
+    LOG_INF("Exiting application...");
 }
 
 void Application::initStation()
@@ -140,6 +144,7 @@ void Application::initClient()
     m_connopts->set_user_name(m_device_id);
     m_connopts->set_password(m_device_secret);
     m_connopts->set_clean_session(true);
+    m_connopts->set_automatic_reconnect(true);
     m_connopts->set_keep_alive_interval(30);
     m_connopts->set_ssl(*m_sslopts);
 
@@ -150,33 +155,41 @@ void Application::initClient()
 void Application::start()
 {
     initStation();
-
     initClient();
 
-    LOG_INFO("Starting MQTT client at: " << m_url);
+    LOG_INF("Starting MQTT client at: " << m_url);
 
-    try
+    bool cold_start = true;
+    std::unique_lock<std::mutex> lock(m_mutex);
+
+    while (m_running)
     {
-        m_client->connect(*m_connopts)->wait();
-        LOG_INFO("MQTT connected");
+        lock.unlock();
 
-        std::unique_lock<std::mutex> lock(m_mutex);
-
-        while (m_running)
+        try
         {
-            lock.unlock();
+            if (!m_client->is_connected() && cold_start)
+            {
+                cold_start = false;
+                m_client->connect(*m_connopts)->wait();
+                LOG_INF("MQTT connected");
+            }
+            /* reconnection done automatically with exponential delay on Paho side */
 
+            /* publish data anyway to trigger all statistic */
             broadcast();
-
-            lock.lock();
-            m_cv.wait_for(lock, std::chrono::seconds(m_pub_interval),
-                          [this] { return !m_running.load(); });
+        }
+        catch (const mqtt::exception &e)
+        {
+            LOG_ERROR("MQTT connecting error: " << e.what());
         }
 
-        m_client->disconnect()->wait();
+        lock.lock();
+        /* SMALL DELAY */
+        m_cv.wait_for(lock, std::chrono::seconds(m_pub_interval),
+                      [this] { return !m_running.load(); });
     }
-    catch (const mqtt::exception &e)
-    {
-        LOG_ERROR("MQTT connecting error: " << e.what());
-    }
+
+    stopClient();
+    LOG_INF("Application stopped");
 }
