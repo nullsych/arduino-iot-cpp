@@ -1,8 +1,10 @@
 # Arduino Cloud C++ API
 
-This library is designed for Linux-based devices to interact with the Arduino Cloud REST API and can be accessed through a set of endpoints to manage Devices, Things, Properties and more.
+This C++ library provides interaction with the Arduino Cloud MQTT broker. It serves as a `C++` alternative to the officially provided `Javascript`, `Python`, and `Golang` clients.
 
-It serves as a `C++` alternative to the officially provided `Javascript`, `Python`, and `Golang` Arduino Cloud API clients.
+Was originally designed for Linux-based devices to interact with the Arduino Cloud and can be accessed through a set of endpoints to manage Devices, Things, Properties and more.
+
+Connection via this library is achieved by registering a manual device, i.e. a virtual device that is not associated with an Arduino hardware board. This virtual device can connect through a simple username/password (Device ID, Secret Key) which is generated in the Arduino Cloud when configuring a device.
 
 ## Module Layout
 
