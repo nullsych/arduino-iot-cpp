@@ -35,7 +35,7 @@ inline std::string timestamp()
 
 inline void log_console(const char *level, const char *color, const std::string &msg)
 {
-    std::cout << color << "[" << timestamp() << "] "
+    std::cerr << color << "[" << timestamp() << "] "
               << "(" << level << ") " << RESET << " " << msg << std::endl;
 }
 

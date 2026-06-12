@@ -27,34 +27,31 @@ static void signal_handler(int sig)
     }
 }
 
-int main()
+int main(int argc, char const *argv[])
 {
 #ifdef BUILD_DAEMON
     logger::init_syslog("arduino_iot_cloud_client");
 #endif
 
     boost::property_tree::ptree pt;
-    boost::property_tree::read_json(cred_file, pt);
-
     if (!boost::filesystem::exists(cred_file))
     {
         LOG_ERROR("File credentials.json not found! Create one and run again.");
         return -1;
     }
 
+    boost::property_tree::read_json(cred_file, pt);
+
     std::string device_id  = pt.get<std::string>("device_id");
     std::string secret_key = pt.get<std::string>("secret_key");
     std::string thing_id   = pt.get<std::string>("thing_id");
     int pub_period         = pt.get<int>("pub_period");
 
-    Application app(device_id, secret_key);
+    Application app(device_id, secret_key, thing_id, pub_period);
     app_ptr = &app;
 
     std::signal(SIGINT, signal_handler);
     std::signal(SIGTERM, signal_handler);
-
-    app.addThing(thing_id);
-    app.setPeriod(pub_period);
 
     app.start();
 

@@ -1,5 +1,3 @@
-#include "StationData.hpp"
-
 #include <fcntl.h>
 #include <termios.h>
 #include <unistd.h>
@@ -8,25 +6,27 @@
 #include <iostream>
 #include <regex>
 
+#include "MeteoStationUart.hpp"
 #include "common/logs.h"
 
 namespace fs = std::filesystem;
 
-StationData::StationData(const std::string &port, int baudrate) : m_port(port), m_baudrate(baudrate)
+MeteoStationUart::MeteoStationUart(const std::string &port, int baudrate)
+    : m_port(port), m_baudrate(baudrate)
 {
 }
 
-StationData::~StationData()
+MeteoStationUart::~MeteoStationUart()
 {
     stop();
 }
 
-bool StationData::isAlive()
+bool MeteoStationUart::isAlive()
 {
     return m_alive;
 }
 
-bool StationData::start()
+bool MeteoStationUart::start()
 {
     if (m_running)
         return true;
@@ -71,28 +71,28 @@ bool StationData::start()
     LOG_INF("Port found: " << m_port);
 
     m_running = true;
-    m_thread  = std::thread(&StationData::readerLoop, this);
+    m_thread  = std::thread(&MeteoStationUart::readerLoop, this);
     return true;
 }
 
-void StationData::stop()
+void MeteoStationUart::stop()
 {
     m_running = false;
     if (m_thread.joinable())
         m_thread.join();
 }
 
-double StationData::getTemperature() const
+double MeteoStationUart::getTemperature() const
 {
     return m_temp.load();
 }
 
-double StationData::getHumidity() const
+double MeteoStationUart::getHumidity() const
 {
     return m_hum.load();
 }
 
-void StationData::readerLoop()
+void MeteoStationUart::readerLoop()
 {
     int fd = open(m_port.c_str(), O_RDONLY | O_NOCTTY);
     if (fd < 0)

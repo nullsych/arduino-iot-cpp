@@ -4,11 +4,11 @@
 #include <string>
 #include <thread>
 
-class StationData
+class MeteoStationUart
 {
 public:
-    explicit StationData(const std::string &port, int baudrate = 115200);
-    ~StationData();
+    explicit MeteoStationUart(const std::string &port, int baudrate = 115200);
+    ~MeteoStationUart();
 
     bool start();
     void stop();
