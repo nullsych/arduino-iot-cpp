@@ -1,6 +1,6 @@
 # Arduino Cloud C++ API
 
-This C++ library provides interaction with the Arduino Cloud MQTT broker. It serves as a `C++` alternative to the officially provided **Javascript**, **Python**, and **Golang**` clients.
+This C++ library provides interaction with the Arduino Cloud MQTT broker. It serves as a `C++` alternative to the officially provided **Javascript**, **Python**, and **Golang** clients.
 
 Was originally designed for **Linux-based devices** to interact with the Arduino Cloud and can be accessed through a set of endpoints to manage `Devices`, `Things`, `Properties` and more.
 
@@ -15,7 +15,6 @@ The [Original Arduino C++ client library](https://github.com/arduino-libraries/A
 This motivated the idea of building a more generic and portable C++ implementation that could run on essentially any single-board computer.
 
 ⚡️ In future iterations, the same API design is planned to be ported to `Rust`, providing a safer and more modern alternative while preserving the same architecture and communication model.
-
 
 ## Arduino Cloud Notes
 
@@ -77,6 +76,10 @@ src/types/
   Thing.hpp                Arduino IoT Cloud Thing topic helper
   PropertyUpdate.hpp       Property update API types
 ```
+
+## Project Example
+
+To see library in action, navigate to the [examples/rpi-iot-gateway](examples/rpi-iot-gateway/README.md)
 
 ## Build Library
 
@@ -218,7 +221,7 @@ And sync SYSROOT with new libs with RPi:
 rsync -avz "$HOME/rpi-sysroot/usr/" pi@192.168.0.105:/usr/
 ```
 
-After these steps, the library can be consumed from CMake. Navigate to the `examples/` folder and try any example you like.
+After these steps, the library can be consumed from CMake.
 
 ## Basic Usage
 
