@@ -1,38 +1,41 @@
 # RPi IoT Gateway
 
-Example of `# C++ ArduinoIOTCloud` with RPi systemd application.
+My home automation project that demonstrates a simple IoT gateway built from two components:
 
-## Dependencies
+* An **ATmega328P-based Home Weather Station** equipped with a **BME280** environmental sensor, as well as **MQ135** & **MQ7**.
+* A **Raspberry Pi** running the Arduino IoT Cloud C++ client.
 
-The CMake target currently expects these dependencies to be available:
+The BME280 sensor periodically measures temperature and humidity, while the ATmega328P sends the collected data to the Raspberry Pi over a USB serial (UART) connection:
 
-- CMake 3.16+
-- C++17 compiler
-- OpenSSL
-- Threads
-- [C++ ArduinoIOTCloud library](https://openai.com)
-
-The last section described below.
-
-### Install C++ ArduinoIOTCloud dependencies
-
-Init `C++ ArduinoIOTCloud` as submodule:
-
-```sh
-git submodule update --init --recursive
+```text
+Temp: 32.20 C, Hum: 44.0 %, MQ135: 31, MQ7: 129  |  9973d11-dirty  ### SYS OK @ (MQ ARM) t, s: 61
+Temp: 32.20 C, Hum: 44.0 %, MQ135: 31, MQ7: 130  |  9973d11-dirty  ### SYS OK @ (MQ ARM) t, s: 61
+Temp: 32.20 C, Hum: 44.0 %, MQ135: 31, MQ7: 130  |  9973d11-dirty  ### SYS OK @ (MQ ARM) t, s: 61
 ```
 
-And then follow [C++ ArduinoIOTCloud library](...) to install it's dependencies, and `SYSROOT` as well (if you do cross-compilation).
+The Raspberry Pi acts as an IoT gateway. It receives sensor readings from the weather station, parses the incoming UART data, and publishes the measurements to `Arduino IoT Cloud` using a `manually registered device`.
 
-## Build & Sync
+As a result temperature, humidity and air qualities measurements collected by the weather station can be viewed and monitored remotely through my Arduino IoT Cloud dashboard:
 
-To have an option to run application as daemon, put `BUILD_DAEMON=ON` flag as well (if you do cross-compilation):
+TODO: picture.
+TODO: picture.
+TODO: picture.
+
+## Scalability and Potential Extensions
+
+It is easy to see that instead of a single simple device (like **ATmega328P**), a Raspberry Pi can act as a hub for multiple connected nodes that do not have their own Internet connection. While this sample project intentionally demonstrates a very simple setup, the same architecture can be easily extended into a much more capable IoT gateway!
+
+Instead of communicating with a single ATmega328P over UART, it can collect data from sensors and microcontrollers connected through buses and industrial protocols such as **UART**, **I2C**, **SPI**, **RS-485**, or **Modbus**. This makes it possible to gather information from devices distributed across multiple rooms or floors and forward the collected data to network services.
+
+This makes it possible to aggregate data from many sources, process it locally, and publish it to Arduino IoT Cloud (as simple example) through a single gateway. The approach scales from a small hobby project to larger home automation or monitoring, while keeping edge devices simple and focused on their primary tasks.
+
+## Build
+
+For cross-compilation setup see main [README.md](../../README.md) with corresponding section. The ArduinoIOTCloud library build as a static here.
+
+After that, to configure the project use such example:
 
 ```sh
-export SYSROOT=//rpi-env/rpi-sysroot
-export PKG_CONFIG_SYSROOT_DIR="$SYSROOT"
-export PKG_CONFIG_LIBDIR="$SYSROOT/usr/lib/arm-linux-gnueabihf/pkgconfig:$SYSROOT/usr/lib/pkgconfig:$SYSROOT/usr/local/lib/pkgconfig"
-
 cmake -S . -B build \
   -DCMAKE_TOOLCHAIN_FILE=toolchain-rpi.cmake \
   -DPKG_CONFIG_EXECUTABLE="$(which pkg-config)" \
@@ -41,116 +44,115 @@ cmake -S . -B build \
   -DBUILD_DAEMON=ON
 ```
 
-And after that deploy it into your RPi:
+Build the application:
 
 ```sh
-scp build/arduino_iot_cloud_client pi@192.168.0.105:/home/assist
+cmake --build build -j
 ```
 
-## Prepare systemd unit
+The `BUILD_DAEMON=ON` option enables `systemd` integration and daemon.
 
-In new file, e.g. `arduino-iot.service`:
+## Deploy to Raspberry Pi
+
+Copy the executable and credentials file to the target device:
+
+```sh
+scp build/arduino_iot_cloud_client pi@192.168.0.105:/home/pi
+scp credentials.json pi@192.168.0.105:/usr/local/bin/
+```
+
+## Configure a Systemd Service
+
+Create a new service file:
 
 ```bash
 sudo nano /etc/systemd/system/arduino-iot.service
 ```
 
-Put:
+Add the following configuration:
 
 ```ini
 [Unit]
 Description=Arduino IoT Cloud Client
 After=network-online.target
 Wants=network-online.target
-Restart=always
-RestartSec=5
-StartLimitInterval=0
 
 [Service]
 Type=simple
-ExecStart=/path/to/arduino_iot_cloud_client
+ExecStart=/home/pi/arduino_iot_cloud_client
 WorkingDirectory=/usr/local/bin
+User=pi
+Group=dialout
+Environment=HOME=/home/pi
 Restart=always
 RestartSec=5
-User=asist
-Environment=HOME=/home/assist
-
-# ttyUSB access group (optional)
-Group=dialout
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-The `ExecStart` path can be `/home/assist/arduino_iot_cloud_client` on RPi.
+### Notes
 
-The `credentials.json` should be in:
+* Adjust `ExecStart` to match the actual location of the executable.
+* The `dialout` group is only required when accessing serial devices such as `/dev/ttyUSB*`.
+* Ensure that `credentials.json` is available at:
 
-```
+```text
 /usr/local/bin/credentials.json
 ```
 
----
+## Manage the Service
 
-# 🔧 2. Restart systemd
+Reload systemd after creating or modifying the service:
 
 ```bash
 sudo systemctl daemon-reload
 ```
 
-
-Start (manual):
+Start the service:
 
 ```bash
 sudo systemctl start arduino-iot
 ```
 
-Check:
+Check service status:
 
 ```bash
 sudo systemctl status arduino-iot
-
-● arduino-iot.service - Arduino IoT Cloud Client
-     Loaded: loaded (/etc/systemd/system/arduino-iot.service; disabled; preset: enabled)
-     Active: activating (auto-restart) since Mon 2026-02-16 18:55:38 GMT; 159ms ago
- Invocation: 6502f1824b6d41e881a57f820ef72243
-    Process: 1175 ExecStart=/home/asist/arduino_iot_cloud_client (code=exited, status=0/SUCCESS)
-   Main PID: 1175 (code=exited, status=0/SUCCESS)
-        CPU: 231ms
 ```
 
-## See logs on device
-
-Via `journalctl`:
-
-```sh
-sudo journalctl -f | grep "arduino"
-
-Feb 16 18:47:02 raspberrypi arduino_iot_cloud_client[1000]: CPU temperature 57.996 C, Home temperature: 26.06 C, Home humidity = 25.3 %
-Feb 16 18:47:02 raspberrypi arduino_iot_cloud_client[1000]: Published 7 packet(s) / Failed 0 packet(s)
-```
-
-
-Enable autostart:
+Enable automatic startup on boot:
 
 ```bash
 sudo systemctl enable arduino-iot
 ```
 
-See logs:
-
-```bash
-journalctl -u arduino-iot -f
-```
-
-Stop:
+Stop the service:
 
 ```bash
 sudo systemctl stop arduino-iot
 ```
 
-Disable autostart:
+Disable automatic startup:
 
 ```bash
 sudo systemctl disable arduino-iot
 ```
+
+## View Logs
+
+Follow service logs in real time:
+
+```bash
+journalctl -u arduino-iot -f
+```
+
+Or filter logs directly from the system journal:
+
+```bash
+sudo journalctl -f | grep arduino
+```
+
+Example output:
+
+TODO

@@ -1,3 +1,5 @@
+#include "MeteoStationUart.hpp"
+
 #include <fcntl.h>
 #include <termios.h>
 #include <unistd.h>
@@ -6,7 +8,6 @@
 #include <iostream>
 #include <regex>
 
-#include "MeteoStationUart.hpp"
 #include "common/logs.h"
 
 namespace fs = std::filesystem;

@@ -1,5 +1,8 @@
+# builds
 build/
+examples/rpi-iot-gateway/build/
+
 .vscode/
 
-run.md
+# your secret credentials
 credentials.json
