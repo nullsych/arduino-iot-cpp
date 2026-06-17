@@ -18,9 +18,7 @@ The Raspberry Pi acts as an IoT gateway. It receives sensor readings from the we
 
 As a result temperature, humidity and air qualities measurements collected by the weather station can be viewed and monitored remotely through my Arduino IoT Cloud dashboard:
 
-TODO: picture.
-TODO: picture.
-TODO: picture.
+![dashboard.png](dashboard.png)
 
 ## Scalability and Potential Extensions
 

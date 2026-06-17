@@ -4,6 +4,12 @@ This C++ library provides interaction with the Arduino Cloud MQTT broker. It ser
 
 Was originally designed for **Linux-based devices** to interact with the Arduino Cloud and can be accessed through a set of endpoints to manage `Devices`, `Things`, `Properties` and more.
 
+## Dashboard Example
+
+To see full example, navigate to the [examples/rpi-iot-gateway](examples/rpi-iot-gateway/README.md).
+
+![dashboard.png](examples/rpi-iot-gateway/dashboard.png)
+
 ## Background
 
 This library started as a personal experiment and practical need: I wanted a `C++` native way to interact with the `Arduino Cloud` without relying on the official Python, JavaScript, or Go SDKs.
