@@ -60,6 +60,27 @@ scp examples/rpi-iot-gateway/build/arduino_iot_cloud_client pi@192.168.0.105:/ho
 scp credentials.json pi@192.168.0.105:/home/pi
 ```
 
+Example output if run as non-daemon application:
+
+```
+pi@raspberrypi:~ $ ./arduino_iot_cloud_client 
+
+[19:34:49] (INFO)  Git version: db5044b
+[19:34:49] (INFO)  Port found: /dev/ttyUSB0
+[19:34:49] (INFO)  Starting MQTT client at: ssl://iot.arduino.cc:8884
+[19:34:50] (INFO)  MQTT connected
+[19:34:50] (INFO)  CPU: 57.996 C
+[19:34:50] (INFO)  Home temperature: 30.72 C, Home humidity: 33.3%, MQ7: 181, MQ135: 27
+[19:34:50] (INFO)  Published 1 packet(s) / Failed 0 packet(s)
+[19:35:00] (INFO)  CPU: 56.92 C
+[19:35:00] (INFO)  Home temperature: 30.7 C, Home humidity: 33.8%, MQ7: 186, MQ135: 27
+[19:35:00] (INFO)  Published 2 packet(s) / Failed 0 packet(s)
+[19:35:10] (INFO)  CPU: 56.92 C
+[19:35:10] (INFO)  Home temperature: 30.7 C, Home humidity: 33.9%, MQ7: 185, MQ135: 28
+[19:35:11] (INFO)  Published 3 packet(s) / Failed 0 packet(s)
+[19:35:21] (INFO)  CPU: 56.92 C
+```
+
 ## Configure a Systemd Service
 
 Create a new service file:
@@ -153,7 +174,3 @@ Or filter logs directly from the system journal:
 ```bash
 sudo journalctl -f | grep arduino
 ```
-
-Example output:
-
-TODO
