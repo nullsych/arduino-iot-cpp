@@ -3,6 +3,7 @@ project(arduino_iot_cloud_client)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(ARDUINO_IOT_CLOUD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../" CACHE PATH "Path to ArduinoIOTCloud source directory")
 
 option(BUILD_DAEMON "Build as daemon" OFF)
 
@@ -12,8 +13,7 @@ endif()
 
 # ---- Find packages ----
 find_package(Threads REQUIRED)
-
-add_subdirectory(libs/ArduinoIOTCloud)
+add_subdirectory(${ARDUINO_IOT_CLOUD_DIR} ${CMAKE_CURRENT_BINARY_DIR}/build)
 
 file(GLOB_RECURSE MAIN_SOURCES CONFIGURE_DEPENDS src/*.cpp)
 

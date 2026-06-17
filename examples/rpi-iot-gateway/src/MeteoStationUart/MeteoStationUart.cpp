@@ -93,6 +93,21 @@ double MeteoStationUart::getHumidity() const
     return m_hum.load();
 }
 
+int MeteoStationUart::getMq135() const
+{
+    return m_mq135.load();
+}
+
+int MeteoStationUart::getMq7() const
+{
+    return m_mq7.load();
+}
+
+int MeteoStationUart::getStationUptime() const
+{
+    return m_time_s.load();
+}
+
 void MeteoStationUart::readerLoop()
 {
     int fd = open(m_port.c_str(), O_RDONLY | O_NOCTTY);
@@ -116,7 +131,8 @@ void MeteoStationUart::readerLoop()
 
     tcsetattr(fd, TCSANOW, &tty);
 
-    std::regex re(R"(Temp:\s*([0-9.]+)\s*C,\s*Hum:\s*([0-9.]+))");
+    std::regex re(
+        R"(Temp:\s*([0-9.]+)\s*C,\s*Hum:\s*([0-9.]+)\s*%,\s*MQ135:\s*([0-9]+),\s*MQ7:\s*([0-9]+).*?t,\s*s:\s*([0-9]+))");
 
     std::string buffer;
     buffer.reserve(256);
@@ -131,14 +147,21 @@ void MeteoStationUart::readerLoop()
             {
                 try
                 {
-                    double t = std::stod(match[1]);
-                    double h = std::stod(match[2]);
+                    double t   = std::stod(match[1]);
+                    double h   = std::stod(match[2]);
+                    int mq135  = std::stoi(match[3]);
+                    int mq7    = std::stoi(match[4]);
+                    int time_s = std::stoi(match[5]);
 
-                    m_temp   = t;
-                    m_hum    = h;
+                    m_temp     = t;
+                    m_hum      = h;
+                    m_mq135    = mq135;
+                    m_mq7      = mq7;
+                    m_time_s   = time_s;
                 }
                 catch (...)
                 {
+                    // Игнорируем ошибки конвертации, если вдруг пришел мусор
                 }
             }
             buffer.clear();

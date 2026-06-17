@@ -16,7 +16,7 @@
 
 static Application *app_ptr        = nullptr;
 
-static const std::string cred_file = "/etc/arduino_iot_cloud_client/credentials.json";
+static const std::string cred_file = "credentials.json";
 
 static void signal_handler(int sig)
 {
@@ -45,7 +45,7 @@ int main(int argc, char const *argv[])
     std::string device_id  = pt.get<std::string>("device_id");
     std::string secret_key = pt.get<std::string>("secret_key");
     std::string thing_id   = pt.get<std::string>("thing_id");
-    int pub_period         = pt.get<int>("pub_period");
+    int pub_period         = pt.get<int>("pub_period", 10);  // 10 seconds
 
     Application app(device_id, secret_key, thing_id, pub_period);
     app_ptr = &app;

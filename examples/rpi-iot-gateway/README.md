@@ -8,9 +8,10 @@ My home automation project that demonstrates a simple IoT gateway built from two
 The BME280 sensor periodically measures temperature and humidity, while the ATmega328P sends the collected data to the Raspberry Pi over a USB serial (UART) connection:
 
 ```text
-Temp: 32.20 C, Hum: 44.0 %, MQ135: 31, MQ7: 129  |  9973d11-dirty  ### SYS OK @ (MQ ARM) t, s: 61
-Temp: 32.20 C, Hum: 44.0 %, MQ135: 31, MQ7: 130  |  9973d11-dirty  ### SYS OK @ (MQ ARM) t, s: 61
-Temp: 32.20 C, Hum: 44.0 %, MQ135: 31, MQ7: 130  |  9973d11-dirty  ### SYS OK @ (MQ ARM) t, s: 61
+Temp: 27.64 C, Hum: 39.3 %, MQ135: 103, MQ7: 436  |  e72b85b  ### SYS OK @ (MQ ARM) t, s: 60
+Temp: 27.64 C, Hum: 39.3 %, MQ135: 103, MQ7: 436  |  e72b85b  ### SYS OK @ (MQ ARM) t, s: 60
+Temp: 27.64 C, Hum: 39.3 %, MQ135: 103, MQ7: 434  |  e72b85b  ### SYS OK @ (MQ ARM) t, s: 61
+Temp: 27.65 C, Hum: 39.3 %, MQ135: 103, MQ7: 433  |  e72b85b  ### SYS OK @ (MQ ARM) t, s: 61
 ```
 
 The Raspberry Pi acts as an IoT gateway. It receives sensor readings from the weather station, parses the incoming UART data, and publishes the measurements to `Arduino IoT Cloud` using a `manually registered device`.
@@ -57,8 +58,8 @@ The `BUILD_DAEMON=ON` option enables `systemd` integration and daemon.
 Copy the executable and credentials file to the target device:
 
 ```sh
-scp build/arduino_iot_cloud_client pi@192.168.0.105:/home/pi
-scp credentials.json pi@192.168.0.105:/usr/local/bin/
+scp examples/rpi-iot-gateway/build/arduino_iot_cloud_client pi@192.168.0.105:/home/pi
+scp credentials.json pi@192.168.0.105:/home/pi
 ```
 
 ## Configure a Systemd Service
@@ -79,7 +80,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/home/pi/arduino_iot_cloud_client
+ExecStart=/usr/local/bin/arduino_iot_cloud_client
 WorkingDirectory=/usr/local/bin
 User=pi
 Group=dialout
@@ -90,6 +91,8 @@ RestartSec=5
 [Install]
 WantedBy=multi-user.target
 ```
+
+Relocate both `arduino_iot_cloud_client` and `credentials.json` in `usr/local/bin` as well.
 
 ### Notes
 
