@@ -1,6 +1,8 @@
-# Arduino Cloud C++ API (early-stage implementation❗️)
+# Arduino Cloud C++ API
 
-This C++ library provides interaction with the Arduino Cloud MQTT broker. It serves as a `C++` alternative to the officially provided **Javascript**, **Python**, and **Golang** clients.
+> ❗️The library is still in early-stage implementation❗️
+
+This C++ library provides interaction with the Arduino Cloud MQTT broker. It serves as a `C++` alternative to the officially provided [Javascript](https://docs.arduino.cc/arduino-cloud/api/javascript/), [Python](https://docs.arduino.cc/arduino-cloud/api/python/), and [Golang](https://github.com/arduino/iot-client-go) clients.
 
 Was originally designed for **Linux-based devices** to interact with the Arduino Cloud and can be accessed through a set of endpoints to manage `Devices`, `Things`, `Properties` and more.
 

@@ -38,11 +38,11 @@ Application::~Application() {}
 
 PropertyUpdates Application::collectProperties()
 {
-    double cpu_temp  = -1;
-    double home_temp = -1;
-    double home_hum  = -1;
-    int home_mq135   = -1;
-    int home_mq7     = -1;
+    double cpu_temp         = -1;
+    double home_temp        = -1;
+    double home_hum         = -1;
+    int home_polution_level = -1;
+    int home_co_level       = -1;
 
     if (!m_station->isAlive())
     {
@@ -50,21 +50,23 @@ PropertyUpdates Application::collectProperties()
     }
     else
     {
-        home_temp  = m_station->getTemperature();
-        home_hum   = m_station->getHumidity();
-        home_mq135 = m_station->getMq135();
-        home_mq7   = m_station->getMq7();
+        home_temp           = m_station->getTemperature();
+        home_hum            = m_station->getHumidity();
+        home_polution_level = m_station->getAirPollutionLevel();
+        home_co_level       = m_station->getCoLevel();
     }
 
     cpu_temp = getCpuTemp();
 
     LOG_INF("CPU: " << cpu_temp << " C");
     LOG_INF("Home temperature: " << home_temp << " C, Home humidity: " << home_hum << "%"
-                                 << ", MQ7: " << home_mq7 << ", MQ135: " << home_mq135);
+                                 << ", CO level: " << home_co_level << "%, Pollution level "
+                                 << home_polution_level << "%");
 
     return {
-        {"cpu_temperature", cpu_temp}, {"home_temperature", home_temp}, {"home_humidity", home_hum},
-        {"home_mq135", home_mq135},    {"home_mq7", home_mq7},
+        {"cpu_temperature", cpu_temp}, {"home_temperature", home_temp},
+        {"home_humidity", home_hum},   {"home_mq135", home_polution_level},
+        {"home_mq7", home_co_level},
     };
 }
 

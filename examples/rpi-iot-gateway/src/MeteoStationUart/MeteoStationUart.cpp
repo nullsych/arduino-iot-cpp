@@ -12,6 +12,17 @@
 
 namespace fs = std::filesystem;
 
+static int map_to_percent(int value, int min, int max)
+{
+    if (value <= min)
+        return 0;
+
+    if (value >= max)
+        return 100;
+
+    return ((value - min) * 100) / (max - min);
+}
+
 MeteoStationUart::MeteoStationUart(const std::string &port, int baudrate)
     : m_port(port), m_baudrate(baudrate)
 {
@@ -93,14 +104,29 @@ double MeteoStationUart::getHumidity() const
     return m_hum.load();
 }
 
-int MeteoStationUart::getMq135() const
+int MeteoStationUart::getAirPollutionLevel() const
 {
-    return m_mq135.load();
+    int air_polution_level = 0;
+    auto mq135_raw         = m_mq135.load();
+    const double temp      = m_temp.load();
+    const double hum       = m_hum.load();
+
+    // 20 C and  65% RH as basis
+    air_polution_level = mq135_raw * (1.0 + (temp - 30.0) * 0.01);
+    air_polution_level = mq135_raw * (1.0 + (65.0 - hum) * 0.005);
+
+    int percent =
+        static_cast<int>((air_polution_level - m_clean_air) * 100.0 / (m_dirty_air - m_clean_air));
+
+    return std::clamp(percent, 0, 100);
 }
 
-int MeteoStationUart::getMq7() const
+int MeteoStationUart::getCoLevel() const
 {
-    return m_mq7.load();
+    int co_level = 0;
+    auto mq7_raw = m_mq7.load();
+
+    return map_to_percent(mq7_raw, m_clean_air, m_dirty_air);
 }
 
 int MeteoStationUart::getStationUptime() const

@@ -16,12 +16,16 @@ public:
 
     double getTemperature() const;
     double getHumidity() const;
-    int getMq135() const;
-    int getMq7() const;
+    int getAirPollutionLevel() const;
+    int getCoLevel() const;
     int getStationUptime() const;
 
 private:
     void readerLoop();
+
+private:
+    static constexpr double m_clean_air = 150.0;
+    static constexpr double m_dirty_air = 400;
 
 private:
     std::string m_port;
